@@ -1,6 +1,6 @@
 from langchain_core.messages import HumanMessage
-from agents.models import BlogPost, PaperState
-from agents.model import get_model
+from backend.models import BlogPost, PaperState
+from backend.model import get_model
 
 
 def write_technical(state: PaperState) -> dict:

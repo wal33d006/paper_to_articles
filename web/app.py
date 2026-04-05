@@ -1,17 +1,20 @@
 import json
 import io
 import os
+import sys
 import zipfile
 
-from agents.config import config
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from backend.config import config
 
 os.environ["LANGCHAIN_API_KEY"] = config.langchain_api_key
 os.environ["LANGCHAIN_TRACING_V2"] = str(config.langsmith_tracing).lower()
 os.environ["LANGCHAIN_PROJECT"] = config.langsmith_project
 
 from flask import Flask, render_template, request, Response, stream_with_context, send_file
-from agents.pipeline import stream_pipeline
-from agents.document import extract_text_from_pdf, build_markdown_file, sanitize_filename
+from backend.pipeline import stream_pipeline
+from backend.document import extract_text_from_pdf, build_markdown_file, sanitize_filename
 
 app = Flask(__name__)
 
@@ -41,8 +44,7 @@ def process():
         raw_text = extract_text_from_pdf(paper_file)
     except Exception as e:
         def error_stream():
-            yield f"data: error: {json.dumps(
-            'Could not read the PDF. Please make sure it is a text-based PDF, not a scanned image.')}\n\n"
+            yield f"data: error: {json.dumps('Could not read the PDF. Please make sure it is a text-based PDF, not a scanned image.')}\n\n"
 
         return Response(stream_with_context(error_stream()), mimetype="text/event-stream")
 
@@ -57,7 +59,7 @@ def process():
 
             if last_result:
                 import threading
-                from agents.evaluators import run_evaluations
+                from backend.evaluators import run_evaluations
 
                 def run_evals():
                     import asyncio

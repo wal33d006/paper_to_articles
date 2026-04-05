@@ -1,5 +1,5 @@
 from langchain_google_genai import ChatGoogleGenerativeAI
-from agents.config import config
+from backend.config import config
 
 
 def get_model():

@@ -2,11 +2,11 @@ import json
 
 from langgraph.graph import StateGraph, END
 
-from agents.models import PaperState
-from agents.extractor import extract_paper
-from agents.simplifier import simplify_paper
-from agents.writers import write_technical, write_general, write_eli5
-from agents.judge import judge_posts, route_after_judge
+from backend.models import PaperState
+from backend.agents.extractor import extract_paper
+from backend.agents.simplifier import simplify_paper
+from backend.agents.writers import write_technical, write_general, write_eli5
+from backend.agents.judge import judge_posts, route_after_judge
 
 
 def build_pipeline():

@@ -1,6 +1,6 @@
 from langchain_core.messages import HumanMessage
-from agents.models import PaperContent, PaperState
-from agents.model import get_model
+from backend.models import PaperContent, PaperState
+from backend.model import get_model
 
 
 def extract_paper(state: PaperState) -> dict:

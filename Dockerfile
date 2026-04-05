@@ -5,7 +5,7 @@ FROM python:3.12.3-slim
   COPY web/requirements.txt .
   RUN pip install --no-cache-dir -r requirements.txt
 
-  COPY agents/ ./agents/
+  COPY backend/ ./backend/
   COPY web/ ./web/
   COPY pyproject.toml .
   RUN pip install -e .

@@ -1,6 +1,6 @@
 from langchain_core.messages import HumanMessage
-from agents.models import SimplifiedContent, PaperState
-from agents.model import get_model
+from backend.models import SimplifiedContent, PaperState
+from backend.model import get_model
 
 
 def simplify_paper(state: PaperState) -> dict:

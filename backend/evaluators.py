@@ -5,7 +5,7 @@ from deepeval.test_case import LLMTestCase, LLMTestCaseParams
 from deepeval.models.base_model import DeepEvalBaseLLM
 from deepeval.evaluate.configs import AsyncConfig, DisplayConfig, ErrorConfig
 from langchain_google_genai import ChatGoogleGenerativeAI
-from agents.config import config
+from backend.config import config
 
 
 # ── Custom Gemini model for DeepEval ───────────────────────────────────────
@@ -95,6 +95,9 @@ def build_test_cases(result: dict, raw_text: str) -> list[LLMTestCase]:
 
 # ── Define metrics ─────────────────────────────────────────────────────────
 
+# This metric doesn't work really well with gemini basic models like 2.5 flash, therefore I have commented it out for
+# now
+
 # def get_faithfulness_metric():
 #     return FaithfulnessMetric(
 #         threshold=0.7,
@@ -122,15 +125,6 @@ def get_audience_metric():
         threshold=0.7,
         model=get_deepeval_model()
     )
-
-
-# def get_coverage_metric():
-#     return SummarizationMetric(
-#         threshold=0.5,
-#         model=get_deepeval_model(),
-#         include_reason=True
-#     )
-
 
 # ── Run evaluations ────────────────────────────────────────────────────────
 
