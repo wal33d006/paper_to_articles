@@ -1,6 +1,6 @@
 from langchain_core.messages import HumanMessage
 from backend.models import JudgeVerdict, PaperState
-from backend.model import get_model
+from backend.model_helper import get_model
 
 
 def judge_posts(state: PaperState) -> dict:
