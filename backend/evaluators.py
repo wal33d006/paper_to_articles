@@ -126,6 +126,7 @@ def get_audience_metric():
         model=get_deepeval_model()
     )
 
+
 # ── Run evaluations ────────────────────────────────────────────────────────
 
 def run_evaluations(result: dict, raw_text: str) -> dict:
