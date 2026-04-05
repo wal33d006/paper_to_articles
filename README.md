@@ -91,8 +91,10 @@ gcloud run deploy paper-to-articles \
 ## Project structure
 
 ```
-agents/       LangGraph pipeline, Gemini agents, evaluation
-web/          Flask app, templates, static files
-Dockerfile    Production container (Gunicorn)
-pyproject.toml Python package config
+backend/            Config, models, pipeline, evaluation
+backend/agents/     Extractor, simplifier, writer, and judge agents
+backend/models/     Pydantic models and LangGraph state
+web/                Flask app, templates, static files
+Dockerfile          Production container (Gunicorn)
+pyproject.toml      Python package config
 ```
