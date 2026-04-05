@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paper to Articles</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>Paper to Articles</h1>
+        <p>Upload a research paper and get three blog posts written for different audiences — instantly.</p>
+    </header>
+
+    <div id="error-banner" class="error-banner" style="display:none;"></div>
+
+    <div class="card" id="upload-card">
+        <form id="paper-form">
+            <div class="form-group">
+                <label for="paper_file">Research Paper (PDF)</label>
+                <input
+                        type="file"
+                        id="paper_file"
+                        name="paper_file"
+                        accept=".pdf">
+                <p class="field-hint">Must be a text-based PDF, not a scanned image.</p>
+            </div>
+
+            <button type="submit" id="submit-btn">Generate Blog Posts</button>
+            <p class="loading-msg" id="loading-msg"></p>
+        </form>
+    </div>
+
+    <div id="result-section" style="display:none;">
+        <div class="card">
+            <div class="verdict-bar" id="verdict-bar"></div>
+        </div>
+
+        <div class="card">
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="technical">Technical</button>
+                <button class="tab-btn" data-tab="general">General</button>
+                <button class="tab-btn" data-tab="eli5">ELI5</button>
+            </div>
+
+            <div id="tab-technical" class="tab-content active">
+                <h2 id="title-technical" class="post-title"></h2>
+                <div class="takeaways" id="takeaways-technical"></div>
+                <div class="post-content" id="content-technical"></div>
+            </div>
+
+            <div id="tab-general" class="tab-content">
+                <h2 id="title-general" class="post-title"></h2>
+                <div class="takeaways" id="takeaways-general"></div>
+                <div class="post-content" id="content-general"></div>
+            </div>
+
+            <div id="tab-eli5" class="tab-content">
+                <h2 id="title-eli5" class="post-title"></h2>
+                <div class="takeaways" id="takeaways-eli5"></div>
+                <div class="post-content" id="content-eli5"></div>
+            </div>
+        </div>
+
+        <button id="download-btn" class="download-btn">Download All Posts (.zip)</button>
+        <br><br>
+        <a href="/" class="back-link">← Process Another Paper</a>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+          let resultData = null;
+
+          // ── Tab switching ──────────────────────────────────────────────
+          document.querySelectorAll(".tab-btn").forEach(btn => {
+              btn.addEventListener("click", function() {
+                  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+                  document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+                  this.classList.add("active");
+                  document.getElementById("tab-" + this.dataset.tab).classList.add("active");
+              });
+          });
+
+          // ── Form submit ────────────────────────────────────────────────
+          const form = document.getElementById("paper-form");
+          const submitBtn = document.getElementById("submit-btn");
+          const loadingMsg = document.getElementById("loading-msg");
+          const errorBanner = document.getElementById("error-banner");
+          const resultSection = document.getElementById("result-section");
+
+          form.addEventListener("submit", async function(e) {
+              e.preventDefault();
+
+              submitBtn.style.display = "none";
+              loadingMsg.style.display = "block";
+              loadingMsg.textContent = "Starting...";
+              errorBanner.style.display = "none";
+              resultSection.style.display = "none";
+
+              const formData = new FormData(form);
+              const response = await fetch("/process", {
+                  method: "POST",
+                  body: formData
+              });
+
+              const reader = response.body.getReader();
+              const decoder = new TextDecoder();
+              let buffer = "";
+
+              while (true) {
+                  const { done, value } = await reader.read();
+                  if (done) break;
+
+                  buffer += decoder.decode(value, { stream: true });
+                  const messages = buffer.split("\n\n");
+                  buffer = messages.pop();
+
+                  for (const message of messages) {
+                      for (const line of message.split("\n")) {
+                          if (!line.startsWith("data: ")) continue;
+                          const content = line.slice(6);
+
+                          if (content.startsWith("status: ")) {
+                              loadingMsg.textContent = content.slice(8);
+
+                          } else if (content.startsWith("result: ")) {
+                              const data = JSON.parse(content.slice(8));
+                              resultData = data;
+                              renderResult(data);
+
+                          } else if (content.startsWith("error: ")) {
+                              const message = JSON.parse(content.slice(7));
+                              errorBanner.textContent = message;
+                              errorBanner.style.display = "block";
+                              loadingMsg.style.display = "none";
+                              submitBtn.style.display = "inline-block";
+                          }
+                      }
+                  }
+              }
+          });
+
+          // ── Render result ──────────────────────────────────────────────
+          function renderResult(data) {
+              const audiences = ["technical", "general", "eli5"];
+
+              for (const audience of audiences) {
+                  const post = data[audience];
+                  if (!post) continue;
+
+                  document.getElementById("title-" + audience).textContent = post.title;
+                  document.getElementById("content-" + audience).innerHTML = marked.parse(post.content);
+
+                  const takeawaysEl = document.getElementById("takeaways-" + audience);
+                  takeawaysEl.innerHTML = "";
+                  const ul = document.createElement("ul");
+                  ul.className = "takeaways-list";
+                  for (const point of post.key_takeaways) {
+                      const li = document.createElement("li");
+                      li.textContent = point;
+                      ul.appendChild(li);
+                  }
+                  takeawaysEl.appendChild(ul);
+              }
+
+              const verdict = data.verdict;
+              const verdictBar = document.getElementById("verdict-bar");
+              verdictBar.innerHTML = `
+                  <span class="verdict-score">Judge Score: ${verdict.score}/10</span>
+                  ${verdict.accuracy_concerns.length > 0
+                      ? `<span class="verdict-concerns">⚠ ${verdict.accuracy_concerns.length} accuracy note(s)</span>`
+                      : `<span class="verdict-ok">✓ No accuracy concerns</span>`
+                  }
+              `;
+
+              resultSection.style.display = "block";
+              loadingMsg.style.display = "none";
+              submitBtn.style.display = "inline-block";
+          }
+
+          // ── Download ───────────────────────────────────────────────────
+          document.getElementById("download-btn").addEventListener("click", async function() {
+              if (!resultData) return;
+
+              const response = await fetch("/download", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(resultData)
+              });
+
+              const blob = await response.blob();
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = "blog_posts.zip";
+              a.click();
+              URL.revokeObjectURL(url);
+          });
+
+</script>
+</body>
+</html>
